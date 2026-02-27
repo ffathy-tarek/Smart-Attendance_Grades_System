@@ -1,0 +1,94 @@
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+export default function AddRequest() {
+  const router = useRouter();
+  const [role, setRole] = useState('student'); 
+  const [name, setName] = useState('');
+  const [nationalId, setNationalId] = useState('');
+  const [uniCode, setUniCode] = useState('');
+  const [email, setEmail] = useState('');
+
+  const submitData = () => {
+    if (!name || !nationalId || !email) {
+      return Alert.alert("Error", "All fields are required!");
+    }
+    if (isNaN(Number(nationalId)) || nationalId.length < 10) {
+      return Alert.alert("Invalid ID", "National ID must be numbers only!");
+    }
+    if (!email.includes('@') || !email.includes('.')) {
+      return Alert.alert("Invalid Email", "Please enter a correct email address!");
+    }
+    if (role === 'student' && !uniCode) {
+      return Alert.alert("Error", "University Code is required for students!");
+    }
+
+    Alert.alert("Success", "Request sent for: " + name);
+    router.back();
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>New Request</Text>
+
+        <Text style={styles.label}>Full Name</Text>
+        <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} />
+
+        <Text style={styles.label}>National ID (الرقم القومي)</Text>
+        <TextInput style={styles.input} placeholder="14 digits" keyboardType="numeric" onChangeText={setNationalId} />
+
+        <Text style={styles.label}>Register as:</Text>
+        <View style={styles.roleRow}>
+          <TouchableOpacity 
+            style={[styles.roleBtn, role === 'student' && styles.activeRole]} 
+            onPress={() => setRole('student')}
+          >
+            <Text style={[styles.roleText, role === 'student' && styles.activeText]}>Student</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.roleBtn, role === 'instructor' && styles.activeRole]} 
+            onPress={() => setRole('instructor')}
+          >
+            <Text style={[styles.roleText, role === 'instructor' && styles.activeText]}>Instructor</Text>
+          </TouchableOpacity>
+        </View>
+
+        {role === 'student' && (
+          <>
+            <Text style={styles.label}>University Code</Text>
+            <TextInput style={styles.input} placeholder="EX:23****" keyboardType="numeric" onChangeText={setUniCode} />
+          </>
+        )}
+
+        <Text style={styles.label}>Email</Text>
+        <TextInput 
+          style={styles.input} 
+          
+          placeholder={role === 'student' ? "EX:*****@std.sci.edu.eg" : "EX:*****@sci.edu.eg"} 
+          onChangeText={setEmail} 
+        />
+
+        <TouchableOpacity style={styles.btn} onPress={submitData}>
+          <Text style={styles.btnText}>Submit Request</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flexGrow: 1, backgroundColor: '#f5f5f5', justifyContent: 'center', padding: 20 },
+  card: { backgroundColor: '#fff', borderRadius: 15, padding: 25, elevation: 5 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#1a3a8a', marginBottom: 20, textAlign: 'center' },
+  label: { color: '#333', fontWeight: '600', marginBottom: 5, fontSize: 12 },
+  input: { height: 45, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingLeft: 10, marginBottom: 15 },
+  roleRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  roleBtn: { flex: 1, height: 40, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginHorizontal: 5 },
+  activeRole: { backgroundColor: '#1a3a8a', borderColor: '#1a3a8a' },
+  roleText: { color: '#666', fontWeight: 'bold' },
+  activeText: { color: '#fff' },
+  btn: { height: 50, backgroundColor: '#1a3a8a', justifyContent: 'center', alignItems: 'center', borderRadius: 8, marginTop: 10 },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+});
