@@ -6,28 +6,25 @@ import { auth } from '../firebaseConfig';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [id, setId] = useState('');
+  const [emailInput, setEmailInput] = useState(''); 
   const [pass, setPass] = useState('');
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
-    if (!id || !pass) {
-      return Alert.alert("Missing Data", "Please enter ID and Password");
+    if (!emailInput || !pass) {
+      return Alert.alert("Missing Data", "Please enter Email and Password");
     }
 
-    setLoading(true); 
+    setLoading(true);
 
-    const isStudent = !isNaN(Number(id));
-    const userEmail = isStudent ? `${id}@std.sci.edu.eg` : `${id}@sci.edu.eg`; 
-
-    signInWithEmailAndPassword(auth, userEmail, pass)
+    signInWithEmailAndPassword(auth, emailInput.trim(), pass)
       .then(() => {
-        setLoading(false); 
+        setLoading(false);
         router.replace('/dashboard' as any); 
       })
       .catch((error) => {
-        setLoading(false); 
-        Alert.alert("Login Failed", "Invalid ID or Password. Make sure you are registered.");
+        setLoading(false);
+        Alert.alert("Login Failed", "The email or password you entered is incorrect.");
       });
   };
 
@@ -41,14 +38,16 @@ export default function LoginScreen() {
 
       <View style={styles.card}>
         <Text style={styles.welcome}>Welcome Back</Text>
-        <Text style={styles.subText}>Login using your University ID</Text>
+        <Text style={styles.subText}>Login using your registered email</Text>
 
-        <Text style={styles.label}>University Code</Text>
+        <Text style={styles.label}>Email</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Enter your University Code " 
+          placeholder="Enter your email " 
           placeholderTextColor="#aaa"
-          onChangeText={setId}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onChangeText={setEmailInput}
         />
 
         <Text style={styles.label}>Password</Text>
@@ -67,13 +66,9 @@ export default function LoginScreen() {
         <TouchableOpacity 
           style={[styles.loginBtn, loading && { backgroundColor: '#ccc' }]} 
           onPress={handleLogin}
-          disabled={loading} 
+          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.btnText}>Login</Text>
-          )}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Login</Text>}
         </TouchableOpacity>
       </View>
     </View>
