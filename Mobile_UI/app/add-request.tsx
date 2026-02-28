@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { db } from '../firebaseConfig';
 
 export default function AddRequest() {
   const router = useRouter();
@@ -9,23 +11,39 @@ export default function AddRequest() {
   const [nationalId, setNationalId] = useState('');
   const [uniCode, setUniCode] = useState('');
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const submitData = () => {
+  const submitData = async () => {
     if (!name || !nationalId || !email) {
       return Alert.alert("Error", "All fields are required!");
     }
     if (isNaN(Number(nationalId)) || nationalId.length < 10) {
       return Alert.alert("Invalid ID", "National ID must be numbers only!");
     }
-    if (!email.includes('@') || !email.includes('.')) {
-      return Alert.alert("Invalid Email", "Please enter a correct email address!");
-    }
     if (role === 'student' && !uniCode) {
       return Alert.alert("Error", "University Code is required for students!");
     }
 
-    Alert.alert("Success", "Request sent for: " + name);
-    router.back();
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "requests"), {
+        fullName: name,
+        nationalID: nationalId,
+        role: role,
+        universityCode: role === 'student' ? uniCode : "N/A",
+        email: email.trim(),
+        status: "pending", 
+        type: "new_registration",
+        createdAt: serverTimestamp()
+      });
+
+      setLoading(false);
+      Alert.alert("Success", "Request sent to Admin (David) for approval.");
+      router.back();
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", "Failed to send request. Check your internet.");
+    }
   };
 
   return (
@@ -36,7 +54,7 @@ export default function AddRequest() {
         <Text style={styles.label}>Full Name</Text>
         <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} />
 
-        <Text style={styles.label}>National ID (الرقم القومي)</Text>
+        <Text style={styles.label}>National ID</Text>
         <TextInput style={styles.input} placeholder="14 digits" keyboardType="numeric" onChangeText={setNationalId} />
 
         <Text style={styles.label}>Register as:</Text>
@@ -62,16 +80,15 @@ export default function AddRequest() {
           </>
         )}
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>Email Address</Text>
         <TextInput 
           style={styles.input} 
-          
           placeholder={role === 'student' ? "EX:*****@std.sci.edu.eg" : "EX:*****@sci.edu.eg"} 
           onChangeText={setEmail} 
         />
 
-        <TouchableOpacity style={styles.btn} onPress={submitData}>
-          <Text style={styles.btnText}>Submit Request</Text>
+        <TouchableOpacity style={styles.btn} onPress={submitData} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Submit Request</Text>}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -83,7 +100,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 15, padding: 25, elevation: 5 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#1a3a8a', marginBottom: 20, textAlign: 'center' },
   label: { color: '#333', fontWeight: '600', marginBottom: 5, fontSize: 12 },
-  input: { height: 45, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingLeft: 10, marginBottom: 15 },
+  input: { height: 45, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingLeft: 10, marginBottom: 15, color: '#000' },
   roleRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   roleBtn: { flex: 1, height: 40, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginHorizontal: 5 },
   activeRole: { backgroundColor: '#1a3a8a', borderColor: '#1a3a8a' },
