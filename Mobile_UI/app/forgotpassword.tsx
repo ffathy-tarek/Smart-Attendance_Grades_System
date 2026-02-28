@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { sendPasswordResetEmail } from "firebase/auth";
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 
 export default function ForgotPass() {
   const router = useRouter();
@@ -11,31 +12,34 @@ export default function ForgotPass() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!natId || !email || !phone) {
-      return Alert.alert("Missing Info", "Please fill all fields!");
-    }
-    if (isNaN(Number(natId)) || natId.length < 10) {
-      return Alert.alert("Invalid ID", "National ID must be numbers and correct length!");
+      return Alert.alert("Error", "Please fill all fields!");
     }
     if (isNaN(Number(phone))) {
-      return Alert.alert("Invalid Phone", "Mobile number must be numbers only!");
-    }
-    if (!email.includes('@') || !email.includes('.')) {
-      return Alert.alert("Invalid Email", "Please enter a valid academic email!");
+      return Alert.alert("Invalid Phone", "Mobile number must be numbers!");
     }
 
     setLoading(true);
-    sendPasswordResetEmail(auth, email)
-      .then(() => {
-        setLoading(false);
-        Alert.alert("Success", "A reset link has been sent to: " + email);
-        router.back();
-      })
-      .catch(() => {
-        setLoading(false);
-        Alert.alert("Error", "This email is not registered in our database.");
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+
+      await addDoc(collection(db, "requests"), {
+        nationalID: natId,
+        mobileNumber: phone,
+        email: email.trim(),
+        type: "password_reset",
+        status: "sent",
+        createdAt: serverTimestamp()
       });
+
+      setLoading(false);
+      Alert.alert("Success", "Reset link sent to your email and Admin is notified.");
+      router.back();
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", "Email not found or system error.");
+    }
   };
 
   return (
@@ -49,7 +53,7 @@ export default function ForgotPass() {
         <Text style={styles.label}>Mobile Number</Text>
         <TextInput style={styles.input} placeholder="01xxxxxxxxx" keyboardType="phone-pad" onChangeText={setPhone} />
         
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>Email Address</Text>
         <TextInput style={styles.input} placeholder="****@std.sci.edu.eg" onChangeText={setEmail} />
         
         <TouchableOpacity style={styles.btn} onPress={handleReset} disabled={loading}>
@@ -59,12 +63,13 @@ export default function ForgotPass() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5', justifyContent: 'center', padding: 20 },
   card: { backgroundColor: '#fff', borderRadius: 15, padding: 25, elevation: 5 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#1a3a8a', marginBottom: 20, textAlign: 'center' },
   label: { color: '#333', fontWeight: '600', marginBottom: 5, fontSize: 12 },
-  input: { height: 45, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingLeft: 10, marginBottom: 15 },
+  input: { height: 45, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingLeft: 10, marginBottom: 15, color: '#000' },
   btn: { height: 50, backgroundColor: '#1a3a8a', justifyContent: 'center', alignItems: 'center', borderRadius: 8, marginTop: 10 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });
