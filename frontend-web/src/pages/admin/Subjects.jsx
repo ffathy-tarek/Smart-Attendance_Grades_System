@@ -8,6 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase";
+import { useNavigate } from "react-router-dom";
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
@@ -19,13 +20,15 @@ const Subjects = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
 
+  const navigate = useNavigate();
+
   const [newSubject, setNewSubject] = useState({
     name: "",
     code: "",
     level: "",
     creditHours: "",
     department: "",
-    instructorId: "",
+    instructorIds: [],
   });
 
   useEffect(() => {
@@ -55,15 +58,18 @@ const Subjects = () => {
   };
 
   const filteredSubjects = subjects.filter((sub) => {
-    const instructorName =
-      instructors.find((i) => i.id === sub.instructorId)?.fullName || "";
+    const instructorNames = (
+      sub.instructorIds || (sub.instructorId ? [sub.instructorId] : [])
+    )
+      .map((id) => instructors.find((i) => i.id === id)?.fullName)
+      .join(", ");
 
     const matchSearch =
       sub.name.toLowerCase().includes(search.toLowerCase()) ||
-      instructorName.toLowerCase().includes(search.toLowerCase());
+      instructorNames.toLowerCase().includes(search.toLowerCase());
 
     const matchLevel =
-      levelFilter === "all" || sub.level.toString() === levelFilter;
+      levelFilter === "all" || sub.level?.toString() === levelFilter;
 
     return matchSearch && matchLevel;
   });
@@ -86,7 +92,7 @@ const Subjects = () => {
       level: "",
       creditHours: "",
       department: "",
-      instructorId: "",
+      instructorIds: [],
     });
 
     loadSubjects();
@@ -165,8 +171,15 @@ const Subjects = () => {
                 <td style={tdStyle}>{sub.creditHours}</td>
 
                 <td style={tdStyle}>
-                  {instructors.find((i) => i.id === sub.instructorId)
-                    ?.fullName || "-"}
+                  {(
+                    sub.instructorIds ||
+                    (sub.instructorId ? [sub.instructorId] : [])
+                  )
+                    .map(
+                      (id) =>
+                        instructors.find((i) => i.id === id)?.fullName || "",
+                    )
+                    .join(", ") || "-"}
                 </td>
 
                 <td style={tdStyle}>
@@ -186,6 +199,13 @@ const Subjects = () => {
                     onClick={() => deleteSubject(sub.id)}
                   >
                     Delete
+                  </button>
+
+                  <button
+                    style={viewBtn}
+                    onClick={() => navigate(`/subjects/${sub.id}/students`)}
+                  >
+                    View Students
                   </button>
                 </td>
               </tr>
@@ -250,16 +270,19 @@ const Subjects = () => {
             />
 
             <select
+              multiple
               style={modalInput}
-              value={newSubject.instructorId}
-              onChange={(e) =>
+              value={newSubject.instructorIds}
+              onChange={(e) => {
+                const options = [...e.target.selectedOptions].map(
+                  (o) => o.value,
+                );
                 setNewSubject({
                   ...newSubject,
-                  instructorId: e.target.value,
-                })
-              }
+                  instructorIds: options,
+                });
+              }}
             >
-              <option value="">Select Instructor</option>
               {instructors.map((inst) => (
                 <option key={inst.id} value={inst.id}>
                   {inst.fullName}
@@ -362,6 +385,15 @@ const deleteBtn = {
   border: "none",
   padding: "6px 12px",
   borderRadius: "8px",
+};
+
+const viewBtn = {
+  background: "#059669",
+  color: "white",
+  border: "none",
+  padding: "6px 12px",
+  borderRadius: "8px",
+  marginLeft: "8px",
 };
 
 const overlayStyle = {
