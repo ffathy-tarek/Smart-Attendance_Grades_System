@@ -100,3 +100,53 @@ export const enrollStudent = async (studentId, courseId) => {
     createdAt: new Date(),
   });
 };
+
+/* ================= STUDENTS ================= */
+
+export const addStudent = async (data) => {
+  try {
+    await addDoc(collection(db, "users"), {
+      ...data,
+      role: "student",
+      createdAt: new Date(),
+    });
+  } catch (err) {
+    throw new Error("Failed to add student");
+  }
+};
+
+export const getAllStudents = async () => {
+  try {
+    const q = query(
+      collection(db, "users"),
+      where("role", "==", "student")
+    );
+
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (err) {
+    throw new Error("Failed to fetch students");
+  }
+};
+
+export const updateStudent = async (id, data) => {
+  try {
+    const ref = doc(db, "users", id);
+
+    await updateDoc(ref, data);
+  } catch (err) {
+    throw new Error("Failed to update student");
+  }
+};
+
+export const deleteStudent = async (id) => {
+  try {
+    await deleteDoc(doc(db, "users", id));
+  } catch (err) {
+    throw new Error("Failed to delete student");
+  }
+};
