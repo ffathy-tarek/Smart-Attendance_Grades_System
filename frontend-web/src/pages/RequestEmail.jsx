@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 import Card from "../components/Card";
@@ -10,7 +10,7 @@ const RequestEmail = () => {
   const [code, setCode] = useState("");
   const [email, setEmail] = useState("");
   const [nationalId, setNationalId] = useState("");
-  const [role, setRole] = useState("Student");
+  const [role, setRole] = useState("student"); // lowercase
 
   const handleNumbersOnly = (e, setter) => {
     const value = e.target.value.replace(/\D/g, "");
@@ -23,8 +23,13 @@ const RequestEmail = () => {
   };
 
   const handleSend = async () => {
-    if (!name || !email || !nationalId || (role === "Student" && !code)) {
+    if (!name || !email || !nationalId || (role === "student" && !code)) {
       alert("Please fill all required fields");
+      return;
+    }
+
+    if (nationalId.length !== 14) {
+      alert("National ID must be 14 digits");
       return;
     }
 
@@ -37,21 +42,21 @@ const RequestEmail = () => {
     try {
       await addDoc(collection(db, "emailRequests"), {
         name,
-        code: role === "Student" ? code : "",
+        code: role === "student" ? code : "",
         email,
         nationalId,
-        role,
-        createdAt: new Date(),
+        role, // student or instructor
+        status: "pending", // new field
+        createdAt: serverTimestamp(), // server time
       });
 
       alert("Thank you, we will send your sign-in info to your email soon");
 
-      
       setName("");
       setCode("");
       setEmail("");
       setNationalId("");
-      setRole("Student");
+      setRole("student");
     } catch (error) {
       alert("Error: " + error.message);
     }
@@ -77,10 +82,11 @@ const RequestEmail = () => {
           maxWidth: "400px",
         }}
       >
-        <h1 className="title" style={{ marginBottom: "10px", color: "#110a96" }}>
+        <h1 style={{ marginBottom: "10px", color: "#110a96" }}>
           Request Email
         </h1>
-        <p className="subtitle" style={{ marginBottom: "25px", color: "#555" }}>
+
+        <p style={{ marginBottom: "25px", color: "#555" }}>
           Enter your details to request your email
         </p>
 
@@ -91,8 +97,7 @@ const RequestEmail = () => {
           onChange={(e) => handleLettersOnly(e, setName)}
         />
 
-       
-        {role === "Student" && (
+        {role === "student" && (
           <Input
             label="Code"
             placeholder="Enter your code"
@@ -104,7 +109,7 @@ const RequestEmail = () => {
         <Input
           label="Email"
           placeholder={
-            role === "Student"
+            role === "student"
               ? "Ex (***@std.sci.cu.edu.eg)"
               : "Ex (@sci.cu.edu.eg)"
           }
@@ -113,33 +118,33 @@ const RequestEmail = () => {
         />
 
         <Input
-          label="National ID-14 Digits"
+          label="National ID - 14 Digits"
           placeholder="Enter your national ID"
           value={nationalId}
           onChange={(e) => handleNumbersOnly(e, setNationalId)}
         />
 
- 
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "15px", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "15px",
+            gap: "10px",
+          }}
+        >
           <button
             type="button"
-            onClick={() => setRole("Student")}
+            onClick={() => setRole("student")}
             style={{
               flex: 1,
               padding: "12px 20px",
-              backgroundColor: role === "Student" ? "#110a96" : "#e0e0e0",
-              color: role === "Student" ? "white" : "#555",
+              backgroundColor:
+                role === "student" ? "#110a96" : "#e0e0e0",
+              color: role === "student" ? "white" : "#555",
               border: "none",
               borderRadius: "10px",
               cursor: "pointer",
               fontWeight: "bold",
-              transition: "background-color 0.3s",
-            }}
-            onMouseEnter={(e) => {
-              if (role !== "Student") e.target.style.backgroundColor = "#d1d1d1";
-            }}
-            onMouseLeave={(e) => {
-              if (role !== "Student") e.target.style.backgroundColor = "#e0e0e0";
             }}
           >
             Student
@@ -147,30 +152,23 @@ const RequestEmail = () => {
 
           <button
             type="button"
-            onClick={() => setRole("Instructor")}
+            onClick={() => setRole("instructor")}
             style={{
               flex: 1,
               padding: "12px 20px",
-              backgroundColor: role === "Instructor" ? "#110a96" : "#e0e0e0",
-              color: role === "Instructor" ? "white" : "#555",
+              backgroundColor:
+                role === "doctor" ? "#110a96" : "#e0e0e0",
+              color: role === "doctor" ? "white" : "#555",
               border: "none",
               borderRadius: "10px",
               cursor: "pointer",
               fontWeight: "bold",
-              transition: "background-color 0.3s",
-            }}
-            onMouseEnter={(e) => {
-              if (role !== "Instructor") e.target.style.backgroundColor = "#d1d1d1";
-            }}
-            onMouseLeave={(e) => {
-              if (role !== "Instructor") e.target.style.backgroundColor = "#e0e0e0";
             }}
           >
             Instructor
           </button>
         </div>
 
-     
         <button
           type="button"
           onClick={handleSend}
@@ -184,10 +182,7 @@ const RequestEmail = () => {
             width: "100%",
             marginTop: "20px",
             fontWeight: "bold",
-            transition: "background-color 0.3s",
           }}
-          onMouseEnter={(e) => (e.target.style.backgroundColor = "#3730a3")}
-          onMouseLeave={(e) => (e.target.style.backgroundColor = "#110a96")}
         >
           Send
         </button>
