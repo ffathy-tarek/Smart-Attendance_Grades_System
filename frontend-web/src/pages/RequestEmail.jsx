@@ -33,9 +33,20 @@ const RequestEmail = () => {
       return;
     }
 
-    const emailRegex = /\S+@\S+\.\S+/;
+    let emailRegex;
+
+    if (role === "student") {
+      emailRegex = /^[a-zA-Z0-9._%+-]+@std\.sci\.cu\.edu\.eg$/;
+    } else {
+      emailRegex = /^[a-zA-Z0-9._%+-]+@sci\.cu\.edu\.eg$/;
+    }
+
     if (!emailRegex.test(email)) {
-      alert("Please enter a valid email");
+      alert(
+        role === "student"
+          ? "Email must be like: name@std.sci.cu.edu.eg"
+          : "Email must be like: name@sci.cu.edu.eg"
+      );
       return;
     }
 
@@ -157,8 +168,8 @@ const RequestEmail = () => {
               flex: 1,
               padding: "12px 20px",
               backgroundColor:
-                role === "doctor" ? "#110a96" : "#e0e0e0",
-              color: role === "doctor" ? "white" : "#555",
+              role === "instructor" ? "#110a96" : "#e0e0e0",
+              color: role === "instructor" ? "white" : "#555",
               border: "none",
               borderRadius: "10px",
               cursor: "pointer",
