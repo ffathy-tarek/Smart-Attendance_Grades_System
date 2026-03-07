@@ -1,0 +1,133 @@
+/* src/pages/Login.css */
+.login-container,
+.request-container,
+.forget-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #F8FAFC;
+  margin: 0;
+  padding: 20px;
+}
+
+.login-card,
+.request-card,
+.forget-card {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  width: 350px;
+  text-align: center;
+}
+
+.login-title,
+.request-title,
+.forget-title {
+  margin: 0;
+  color: #1E3A8A;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.login-subtitle,
+.request-subtitle,
+.forget-subtitle {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  color: #64748B;
+  font-size: 14px;
+}
+
+.input-group {
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0F172A;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #94A3B8;
+  background-color: #F8FAFC;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.input-field:focus {
+  border-color: #0EA5E9;
+  box-shadow: 0 0 0 2px rgba(14,165,233,0.2);
+}
+
+.primary-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  color: white;
+  background-color: #1E3A8A;
+  margin-top: 10px;
+}
+
+.primary-button:hover {
+  background-color: #3B82F6;
+}
+
+.primary-button:active {
+  transform: scale(0.98);
+}
+
+.role-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.role-button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  font-size: 14px;
+}
+
+.role-button-active {
+  background-color: #1E3A8A;
+  color: white;
+}
+
+.role-button-inactive {
+  background-color: #E2E8F0;
+  color: #1E293B;
+}
+
+.role-button-inactive:hover {
+  background-color: #CBD5E1;
+}
+
+@media (max-width: 400px) {
+  .login-card,
+  .request-card,
+  .forget-card {
+    width: 90%;
+    padding: 25px;
+  }
+}
