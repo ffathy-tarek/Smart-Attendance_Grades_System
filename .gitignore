@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -8,28 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies
+node_modules/
+dist/
+dist-ssr/
+
+# Expo (if using React Native Expo)
+.expo/
+
+# Environment variables
 *.local
+.env
 
 # Editor directories and files
-.vscode/*
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-=======
-node_modules/
-.expo/
-.vscode/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.env
-node_modules/
->>>>>>> 7da2211802c8f56bb34ea76d164140b32c094390
