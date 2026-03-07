@@ -7,7 +7,6 @@ function PendingAccounts() {
   const [pendingAccounts, setPendingAccounts] = useState([]);
   const auth = getAuth();
 
-  // States للمودال
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [studentDetails, setStudentDetails] = useState({
@@ -26,28 +25,33 @@ function PendingAccounts() {
 
   const handleOpenApproveModal = (account) => {
     setSelectedAccount(account);
+    // ريست للبيانات
     setStudentDetails({ academicYear: "", department: "" }); 
     setShowApproveModal(true);
   };
 
   const confirmApprove = async () => {
-    if (!studentDetails.academicYear || !studentDetails.department) {
-      alert("Please select both Academic Level and Department!");
-      return;
+    // التحقق من القسم لكل الفئات، والتحقق من السنة الدراسية للطلاب فقط
+    if (!studentDetails.department) {
+        alert("Please select a Department!");
+        return;
+    }
+    if (selectedAccount.role === "student" && !studentDetails.academicYear) {
+        alert("Please select Academic Level!");
+        return;
     }
 
     try {
-      // 1. إنشاء الحساب أو التعامل مع الحساب الموجود مسبقاً
-      const tempPassword = "Student@2026"; // باسوورد مؤقتة يقدر يدخل بيها فوراً
+      // 1. إنشاء الحساب بكلمة مرور مؤقتة تعتمد على نوع المستخدم
+      const tempPassword = selectedAccount.role === "instructor" ? "Doctor@2026" : "Student@2026";
       
       try {
         await createUserWithEmailAndPassword(auth, selectedAccount.email, tempPassword);
       } catch (authError) {
-        // لو الحساب موجود في الـ Auth (اللي كانت بتعمل Error)، هنكمل عادي
         if (authError.code !== 'auth/email-already-in-use') throw authError;
       }
 
-      // 2. إرسال إيميل إعادة تعيين الباسوورد (اختياري للطالب)
+      // 2. إرسال إيميل إعادة تعيين الباسوورد
       await sendPasswordResetEmail(auth, selectedAccount.email);
 
       // 3. تحديث حالة الطلب في Firestore
@@ -55,19 +59,26 @@ function PendingAccounts() {
         status: "approved"
       });
 
-      // 4. إضافة بيانات الطالب للـ Firestore (المهمة للعرض في الجدول)
-      await addDoc(collection(db, "users"), {
+      // 4. تجهيز بيانات المستخدم الجديد بناءً على الـ Role
+      const userData = {
         fullName: selectedAccount.name || selectedAccount.fullName,
         email: selectedAccount.email,
-        code: selectedAccount.code || "N/A",
-        role: "student",
-        academicYear: Number(studentDetails.academicYear),
-        department: studentDetails.department,
+        role: selectedAccount.role, // هيجيب instructor أو student تلقائياً
         status: "active",
         createdAt: new Date(),
-      });
+        department: studentDetails.department,
+      };
 
-      alert(`Success! Student can now login with password: ${tempPassword}`);
+      // إضافة تفاصيل خاصة بالطالب فقط
+      if (selectedAccount.role === "student") {
+        userData.code = selectedAccount.code || "N/A";
+        userData.academicYear = Number(studentDetails.academicYear);
+      }
+
+      // حفظ البيانات في كولكشن الـ users
+      await addDoc(collection(db, "users"), userData);
+
+      alert(`Success! ${selectedAccount.role} can now login.`);
       setShowApproveModal(false);
       setSelectedAccount(null);
     } catch (error) {
@@ -83,13 +94,12 @@ function PendingAccounts() {
     } catch (error) { alert(error.message); }
   };
 
-  // ======= Styles =======
+  // ======= الستايلات (بدون تغيير) =======
   const tableStyle = { width: "100%", borderCollapse: "collapse", backgroundColor: "#FFFFFF", borderRadius: "10px", overflow: "hidden" };
   const thStyle = { padding: "14px", backgroundColor: "#F1F5F9", color: "#1E3A8A", textAlign: "left" };
   const tdStyle = { padding: "14px", borderTop: "1px solid #E2E8F0", textAlign: "left" };
   const approveBtn = { backgroundColor: "#22C55E", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer", marginRight: "8px" };
   const rejectBtn = { backgroundColor: "#EF4444", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px", cursor: "pointer" };
-  
   const overlayStyle = { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 };
   const modalStyle = { backgroundColor: "white", padding: "30px", borderRadius: "12px", width: "400px" };
   const modalInput = { width: "100%", padding: "10px", marginTop: "8px", marginBottom: "15px", borderRadius: "8px", border: "1px solid #CBD5E1", boxSizing: "border-box" };
@@ -98,7 +108,7 @@ function PendingAccounts() {
   const saveBtn = { backgroundColor: "#1E3A8A", color: "white", border: "none", padding: "10px 15px", borderRadius: "8px", cursor: "pointer" };
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2 style={{ marginBottom: "20px", color: "#1E3A8A" }}>Pending Accounts</h2>
       
       {pendingAccounts.length === 0 ? <p>No pending requests.</p> : (
@@ -116,7 +126,9 @@ function PendingAccounts() {
               <tr key={account.id}>
                 <td style={tdStyle}>{account.name || account.fullName}</td>
                 <td style={tdStyle}>{account.email}</td>
-                <td style={tdStyle}>{account.role}</td>
+                <td style={{ ...tdStyle, fontWeight: "bold", color: account.role === "instructor" ? "#1E3A8A" : "#64748B" }}>
+                    {account.role}
+                </td>
                 <td style={{ ...tdStyle, textAlign: "center" }}>
                   <button style={approveBtn} onClick={() => handleOpenApproveModal(account)}>
                     Approve
@@ -131,27 +143,33 @@ function PendingAccounts() {
         </table>
       )}
 
-      {/* Approve Modal */}
       {showApproveModal && (
         <div style={overlayStyle}>
           <div style={modalStyle}>
-            <h3 style={{ marginTop: 0, color: "#1E3A8A" }}>Assign Student Details</h3>
+            <h3 style={{ marginTop: 0, color: "#1E3A8A" }}>
+                Confirm {selectedAccount?.role === "instructor" ? "Instructor" : "Student"}
+            </h3>
             <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "20px" }}>
               Approving: <strong>{selectedAccount?.name}</strong>
             </p>
 
-            <label style={labelStyle}>Academic Level</label>
-            <select
-              style={modalInput}
-              value={studentDetails.academicYear}
-              onChange={(e) => setStudentDetails({ ...studentDetails, academicYear: e.target.value })}
-            >
-              <option value="">-- Choose Level --</option>
-              <option value="1">Level 1</option>
-              <option value="2">Level 2</option>
-              <option value="3">Level 3</option>
-              <option value="4">Level 4</option>
-            </select>
+            {/* لا تظهر السنة الدراسية إلا لو كان المستخدم طالب */}
+            {selectedAccount?.role === "student" && (
+              <>
+                <label style={labelStyle}>Academic Level</label>
+                <select
+                  style={modalInput}
+                  value={studentDetails.academicYear}
+                  onChange={(e) => setStudentDetails({ ...studentDetails, academicYear: e.target.value })}
+                >
+                  <option value="">-- Choose Level --</option>
+                  <option value="1">Level 1</option>
+                  <option value="2">Level 2</option>
+                  <option value="3">Level 3</option>
+                  <option value="4">Level 4</option>
+                </select>
+              </>
+            )}
 
             <label style={labelStyle}>Department</label>
             <select
